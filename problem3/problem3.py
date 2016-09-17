@@ -1,3 +1,5 @@
+import sys
+from heapq import *
 
 #returns friend pairs and a list containing all the names
 #pairs - assumed to be sparce data -  are stored in an adjacency list.
@@ -16,19 +18,38 @@ def read_friends(filename):
                pairs[i].add(n[0])
     return pairs, list(name_set)
 
+def seating_successors( pairs, unseated, table_size, curr ):
+    successors = []
+    person = unseated.pop()
+    found_spot = False
+    for table in curr[1]:
+        print "table", table
+        if found_spot is True:
+            break
+        if len( table ) >= table_size:
+            continue
+        table.append( person )
+        found_spot = True 
+    if found_spot is False:
+        curr[1].append( [person] )
+    print "curr", curr
+    successors.append(curr)
+    return successors
+    
+    
 
-#want to modify this to first sort the name set in terms of numbers of friends
-def assign_awkward_seating(pairs, namelist, table_size):
-    tables = {0, namelist.pop} #seat first person at a table
-    while(seq): #while the set is not empty. this takes care of checking for the solution
-        #need to create a successor function 
-        person = namelist.pop()
-        
-        for t, others in tables.items():
-            if something:
-            #if no others are friends and the table isn't full, add to this table
-                break
-            else: #add a new table
+def assign_awkward_seating(pairs, name_list, table_size):
+    fringe = []
+    heappush( fringe, (1, [ [name_list.pop()] ]) ) #priority queue for cost and tables so far
+    while (name_list):
+        print "fringe", fringe
+        curr = heappop( fringe )
+        if not name_list:
+            print "solution", curr
+            return curr
+        for s in seating_successors( pairs, name_list, table_size, curr):
+            heappush( fringe, s )
+    print "The program did not find a solution and probably has a bug."
         
         
       
