@@ -115,8 +115,8 @@ class RoadNetwork:
 	'''
 	Displays the route, total miles and total time in human readable format
 	'''
-	def displayRoute(self, startCityObj):
-		
+	def displayRoute(self, startCityName):
+		startCityObj = self.nodeList[startCityName]
 		print("\nMove from".ljust(40,' ') + "To".ljust(40, ' ') + "On Road".ljust(16,' ') + "Total Miles".ljust(20, ' ') + "Miles/Hr".ljust(13, ' ') + "Total Hrs." + "\n" + "-"*150)
 		while(startCityObj in self.followThisRoute):
 			neighboringCityObj = self.followThisRoute[startCityObj]
@@ -127,6 +127,7 @@ class RoadNetwork:
 			print(startCityObj.cityName.ljust(40, ' ') + neighboringCityObj.cityName.ljust(40, ' ') + highwayName.ljust(16, ' ') + str(distance).ljust(20, ' ') + str(speed).ljust(15, ' ') + str(time))
 			startCityObj = neighboringCityObj
 		print("\nTotal Travel Miles: " + str(self.totalMiles) + "\nTotal Travel Hours: " + str(self.totalHours))
+		finalOutput.append(startCityObj.cityName)
 		finalOutput.appendleft(str(self.totalHours))
 		finalOutput.appendleft(str(self.totalMiles))
 
@@ -173,7 +174,7 @@ def main():
 	foundRoute = graph.findRoute(startCityName, endCityName, routingOption, routingAlgorithm)
 	endTime = time.time()
 	if(foundRoute):
-		graph.displayRoute(graph.nodeList[startCityName])
+		graph.displayRoute(startCityName)
 		print("Found route in: " + str((endTime - startTime)/60) + " min.")
 	print("\n" + " ".join(finalOutput))
 if __name__ == "__main__":
