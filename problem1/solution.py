@@ -3,7 +3,7 @@ from collections import deque
 import sys
 import time
 
-finalOutput = deque()
+finalOutput = deque()#Only used to display machine readable format of route
 '''
 Represents all properties of a city - its name, latitude, longitude and its neighbors.
 neighbors is a dictionary with name of connected city as key and a tuple (length, speed, highway name) as value.
@@ -94,15 +94,17 @@ class RoadNetwork:
 		q = deque([startCityObj])
 		while(q):
 			currentCityObj = q.popleft()
+			currentCityObj.visited = True
 			if(currentCityObj.cityName == endCityName):
 				self.createRouteFromDict(childParentDict, currentCityObj)
 				return True
-			currentCityObj.visited = True
 			for neighboringCityName, edgeWeight in currentCityObj.getAllNeighboringCities():
 				neighboringCityObj = self.nodeList[neighboringCityName]
 				if(not neighboringCityObj.visited):
 					q.append(neighboringCityObj)
-					childParentDict[neighboringCityObj] = currentCityObj
+					if(neighboringCityObj not in childParentDict):
+						childParentDict[neighboringCityObj] = currentCityObj
+				
 		print("Path not found! :(")
 		return False
 
@@ -117,14 +119,14 @@ class RoadNetwork:
 	'''
 	def displayRoute(self, startCityName):
 		startCityObj = self.nodeList[startCityName]
-		print("\nMove from".ljust(40,' ') + "To".ljust(40, ' ') + "On Road".ljust(16,' ') + "Total Miles".ljust(20, ' ') + "Miles/Hr".ljust(13, ' ') + "Total Hrs." + "\n" + "-"*150)
+		print("\nMove from".ljust(40) + "To".ljust(40) + "On Road".ljust(30) + "Total Miles".ljust(20) + "Miles/Hr".ljust(13) + "Total Hrs." + "\n" + "-"*155)
 		while(startCityObj in self.followThisRoute):
 			neighboringCityObj = self.followThisRoute[startCityObj]
 			distance, speed, time, highwayName = startCityObj.neighbors[neighboringCityObj.cityName]
 			self.totalMiles += distance
 			self.totalHours += time
 			finalOutput.append(startCityObj.cityName)
-			print(startCityObj.cityName.ljust(40, ' ') + neighboringCityObj.cityName.ljust(40, ' ') + highwayName.ljust(16, ' ') + str(distance).ljust(20, ' ') + str(speed).ljust(15, ' ') + str(time))
+			print(startCityObj.cityName.ljust(40) + neighboringCityObj.cityName.ljust(40) + highwayName.ljust(30) + str(distance).ljust(20) + str(speed).ljust(15) + str(time))
 			startCityObj = neighboringCityObj
 		print("\nTotal Travel Miles: " + str(self.totalMiles) + "\nTotal Travel Hours: " + str(self.totalHours))
 		finalOutput.append(startCityObj.cityName)
@@ -132,7 +134,23 @@ class RoadNetwork:
 		finalOutput.appendleft(str(self.totalMiles))
 
 	def dfs(self, startCityName, endCityName):
-		return
+		childParentDict = {}
+		startCityObj = self.nodeList[startCityName]
+		q = deque([startCityObj])
+		while(q):
+			currentCityObj = q.pop()
+			if(currentCityObj.cityName == endCityName):
+				self.createRouteFromDict(childParentDict, currentCityObj)
+				return True
+			currentCityObj.visited = True
+			for neighboringCityName, edgeWeight in currentCityObj.getAllNeighboringCities():
+				neighboringCityObj = self.nodeList[neighboringCityName]
+				if(not neighboringCityObj.visited):
+					q.append(neighboringCityObj)
+					if(neighboringCityObj not in childParentDict):
+						childParentDict[neighboringCityObj] = currentCityObj
+		print("Path not found! :(")
+		return False		
 
 	def ids(self, startCityName, endCityName):
 		return
@@ -155,19 +173,27 @@ def validateCities(graph, startCity, endCity):
 
 def main():
 	enteredValue = sys.argv
+	
+	'''
+	if(len(sys.argv)):
+		print("Please enter all arguments! Execution: python3 solution.py <Source City> <Destination City> <Routing Option> <Routing Algorithm>")
+		sys.exit(0)
+	'''
 	startCityName = enteredValue[1]
 	endCityName = enteredValue[2]
 	routingOption = enteredValue[3]
 	routingAlgorithm = enteredValue[4]
-	validateRoutingOptions(routingAlgorithm, routingOption)
+	#validateRoutingOptions(routingAlgorithm, routingOption)
 	
 	startTime = time.time()
 	graph = RoadNetwork()
 	graph.readCityGpsFile()
 	graph.readRoadSegmentsFile()
 	endTime = time.time()
-	validateCities(graph, startCityName, endCityName)
-	
+	#validateCities(graph, startCityName, endCityName)
+	if(startCityName == endCityName):
+		print("You are already there!")
+		sys.exit(0)	
 	#graph.displayGraph()
 	print("Created road network in: " + str((endTime - startTime)/60) + " min.")
 	startTime = time.time()
@@ -176,6 +202,6 @@ def main():
 	if(foundRoute):
 		graph.displayRoute(startCityName)
 		print("Found route in: " + str((endTime - startTime)/60) + " min.")
-	print("\n" + " ".join(finalOutput))
+	print("\nMachine Readable Format:\n" + " ".join(finalOutput))
 if __name__ == "__main__":
 	main()
