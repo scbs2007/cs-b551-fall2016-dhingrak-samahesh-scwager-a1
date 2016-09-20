@@ -1,4 +1,6 @@
-# Author: Tejas K
+# Author: Sanna Wager - code modified and largely based on work by Tejas K 
+# https://github.com/tk26/Random-Graph-Builder
+
 # Generates a random graph of friends
 # Run from shell: python random_graph_builder.py <NumberOfPeople>
 # See output file: myfriends_tk.txt
