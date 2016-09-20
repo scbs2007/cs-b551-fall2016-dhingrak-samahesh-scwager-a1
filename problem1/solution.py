@@ -153,7 +153,31 @@ class RoadNetwork:
 		return False		
 
 	def ids(self, startCityName, endCityName):
-		return
+		startCityObj = self.nodeList[startCityName]
+		depthCount = 0
+		q = deque()
+		
+		for i in range(5478): # no. of cities = 5478. In the worst case (impractical) we can have all cities on a single path and we want to go from root to leaf.
+			visited = {} #cannot use City.visited
+			childParentDict = {}
+			currentDepth = 0
+			q.append((startCityObj, currentDepth))
+			while(q):
+				currentCityObj, atDepth = q.pop()
+				
+				if(currentCityObj.cityName == endCityName):
+					self.createRouteFromDict(childParentDict, currentCityObj)
+					return True
+				visited[currentCityObj] = True
+				if(atDepth != i):
+					for neighboringCityName, edgeWeight in currentCityObj.getAllNeighboringCities():
+						neighboringCityObj = self.nodeList[neighboringCityName]
+						if(neighboringCityObj not in visited):
+							q.append((neighboringCityObj, atDepth + 1))
+							if(neighboringCityObj not in childParentDict):
+								childParentDict[neighboringCityObj] = currentCityObj
+		print("Path not found! :(")
+		return False
 	
 	def astar(self, startCityName, endCityName, routingOption):
 		return
