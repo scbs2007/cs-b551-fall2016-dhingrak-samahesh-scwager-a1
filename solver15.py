@@ -29,21 +29,20 @@ def successor(a):
     i = a.index(0)
     x = i // 4
     y = i % 4
-    if a[i] == 0:
-        # to make a copy that doesn't change the original matrix
-        b = copy.deepcopy(a)[1] #Karun - I had to change this since the array is not np...it does the same thing. the [1] is to extract the board from the list with cost and board
-        # store the value of 0 position
-        #all possible cases where left swap is possible
-        print "b", b
-        if y != 0 or y == 0 and x in [0, 4]:
-            if y != 0: 
-                print "case y != 0", "i=", i, "i-1=", i-1
-                b[i], b[i-1] = b[i-1], b[i]
-            else: 
-                print "case x in [0,4] and y = 0", "i=", i, "i+3=", i+3 
-                b[i], b[i+3] = b[i+3], b[i]
-                fringe.append( (0, b) ) #cost is set to 0. need to add +1 and the heuristic
-                #need to change the three other swaps so that they work for 1-dimensional array. 
+    # to make a copy that doesn't change the original matrix
+    b = copy.deepcopy(a)[1] #Karun - I had to change this since the array is not np...it does the same thing. the [1] is to extract the board from the list with cost and board
+    # store the value of 0 position
+    #all possible cases where left swap is possible
+    print "b", b
+    if y != 0 or y == 0 and x in [0, 4]:
+        if y != 0: 
+            print "case y != 0", "i=", i, "i-1=", i-1
+            b[i], b[i-1] = b[i-1], b[i]
+        else: 
+            print "case x in [0,4] and y = 0", "i=", i, "i+3=", i+3 
+            b[i], b[i+3] = b[i+3], b[i]
+            fringe.append( (0, b) ) #cost is set to 0. need to add +1 and the heuristic
+            #need to change the three other swaps so that they work for 1-dimensional array. 
 #            b[x][y] = b[x][y - 1]
 #            b[x][y - 1] = 0
 #            fringe.append( (0, b) )
