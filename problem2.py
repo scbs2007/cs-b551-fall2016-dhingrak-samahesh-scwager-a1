@@ -2,6 +2,8 @@ import numpy as np
 import heapq
 from heapq import heapify, heappush, heappop
 import sys
+import copy
+
 
 initial_state = [['11', '14', '01', '0'], ['02', '13', '09', '06'], ['04', '05', '03', '07'], ['10', '15', '12', '08']]
 goal_state = [['1' ,'2' ,'3' ,'4'],['5' ,'6' ,'7' ,'8'],['9' ,'10' ,'11' ,'12'],['13' ,'14' ,'15' ,'0']]
@@ -51,22 +53,24 @@ def create_states(a):
         for j in range(0, 4):
             if a[i][j] == '0':
                 # to make a copy that doesn't change the original matrix
-                b = np.copy(a)
+                b = copy.deepcopy(a)
                 # store the value of 0 position
                 x = i
                 y = j
+                # do it for four different state
+                # put an if for checking the possiblility of the edge
                 b[x][y] = b[x][y - 1]
                 b[x][y - 1] = '0'
                 fringe.append(b)
-                b = np.copy(a)
+                b = copy.deepcopy(a)
                 b[x][y] = b[x - 1][y]
                 b[x - 1][y] = '0'
                 fringe.append(b)
-                b = np.copy(a)
+                b = copy.deepcopy(a)
                 b[x][y] = b[x + 1][y]
                 b[x + 1][y] = '0'
                 fringe.append(b)
-                b = np.copy(a)
+                b = copy.deepcopy(a)
                 b[x][y] = b[x][y + 1]
                 b[x][y + 1] = '0'
                 fringe.append(b)
