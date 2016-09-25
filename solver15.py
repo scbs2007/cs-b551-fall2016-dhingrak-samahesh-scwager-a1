@@ -14,7 +14,13 @@ def read_board(filename):
     file.close()
     print "read initial board", board
     return board
-
+    
+def print_board(a):
+    printable = ""
+    for i, m in enumerate(a[1], 1):  
+        printable += str(m) + ['\t', '\n'][i % 4 == 0]
+    print printable
+    
 def check_parity(board):
     print "checking parity"
     count = 0
@@ -23,58 +29,6 @@ def check_parity(board):
         print "curr tile", board[i], "count", count
     print "is the board even? ", count % 2 == 0
     return count % 2 == 0
-
-def successor(a):
-    fringe = []
-    i = a.index(0)
-    x = i // 4
-    y = i % 4
-    # to make a copy that doesn't change the original matrix
-    b = copy.deepcopy(a)[1] #Karun - I had to change this since the array is not np...it does the same thing. the [1] is to extract the board from the list with cost and board
-    # store the value of 0 position
-    #all possible cases where left swap is possible
-    print "b", b
-    if y != 0 or y == 0 and x in [0, 4]:
-        if y != 0: 
-            print "case y != 0", "i=", i, "i-1=", i-1
-            b[i], b[i-1] = b[i-1], b[i]
-        else: 
-            print "case x in [0,4] and y = 0", "i=", i, "i+3=", i+3 
-            b[i], b[i+3] = b[i+3], b[i]
-            fringe.append( (0, b) ) #cost is set to 0. need to add +1 and the heuristic
-            #need to change the three other swaps so that they work for 1-dimensional array. 
-#            b[x][y] = b[x][y - 1]
-#            b[x][y - 1] = 0
-#            fringe.append( (0, b) )
-#            b = np.copy(a)
-#            b[x][y] = b[x - 1][y]
-#            b[x - 1][y] = 0
-#            fringe.append( (0, b) )
-#            b = np.copy(a)
-#            b[x][y] = b[x + 1][y]
-#            b[x + 1][y] = 0
-#            fringe.append( (0, b) )
-#            b = np.copy(a)
-#            b[x][y] = b[x][y + 1]
-#            b[x][y + 1] = 0
-#            fringe.append( (0, b) )
-    return fringe
-
-
-def solve(initial_state):
-    fringe = [ (0, initial_state) ]
-#    pf = a.flatten()
-#    stats_solve = check_parity(pf)
-#    if (stats_solve[1] == 0 or stats_solve[1] == 2) and (stats_solve[0])%2 == 1:
-#    while len(fringe) > 0:
-    for i in range(5):
-        curr = heappop(fringe)
-        print "curr", curr
-        for s in successor(curr):
-            print ('states:' ,fringe)
-            fringe.append(s)
-    return False
-
 
 def heuristic_misplacetiles(initial_state):
     while len(fringe) > 0:
@@ -86,15 +40,91 @@ def heuristic_misplacetiles(initial_state):
                     mis_pl = mis_pl + 1
         heappush(h, (mis_pl, temp))
         return (heappop(h))
+        
+def mh(state, a): #manhattan heuristic
+    for i in range(0, 4):
+        for j in range(0, 4):
+            value = state[i][j]
+            goal_index = goal_dict[value]
+            a = a + abs(i // 4 - goal_index[0]) + abs(j - goal_index[1])
+    return a 
+    
+def find_shortest_path(pos, goal):
+    # want some kind of recursion, see which direction ends up at the goal first
+    return 0
+    
+def mh(board): #manhattan heuristic taking into account option of jumping between corners
+    total_moves = 0
+    for i in range(N):
+        if board[i] == 0: #empty tile
+            continue
+        total_moves += find_shortest_path(i, board[i] - 1) #goal index is 1 less than the number on the tile
+    return total_moves
 
+# function for generating various states of the puzzle
+def successor(a):
+    successors = []
+    pos = a[1].index(0) #position of zero tile
+    g = a[2] + 1 #add 1 to current depth
+    #case 1: left moves are allowed
+    if pos in set( range(N) ) - set( [4, 8] ): 
+        b = copy.deepcopy(a)[1]
+        if pos in [0, 12]:
+            b[pos], b[pos+3] = b[pos+3], b[pos]
+        else: 
+            b[pos], b[pos-1] = b[pos-1], b[pos]
+        h = mh(b)
+        successors.append( (g+h, b, g) )
+    #case 2: right moves are allowed
+    if pos in set( range(N) ) - set( [7, 11] ): 
+        b = copy.deepcopy(a)[1]
+        if pos in [3, 15]:
+            b[pos], b[pos-3] = b[pos-3], b[pos]
+        else:
+            b[pos], b[pos+1] = b[pos+1], b[pos]
+        h = mh(b)
+        successors.append( (g+h, b, g) )
+    #case 3: upward moves are allowed
+    if pos in set( range(N) ) - set( [1, 2] ): 
+        b = copy.deepcopy(a)[1]
+        if pos in [0, 3]:
+            b[pos], b[pos+12] = b[pos+12], b[pos]
+        else: 
+            b[pos], b[pos-4] = b[pos-4], b[pos]
+        h = mh(b)
+        successors.append( (g+h, b, g) )  
+    #case 4: downward moves are allowed
+    if pos in set( range(N) ) - set( [13, 14] ): 
+        b = copy.deepcopy(a)[1]
+        if pos in [12, 15]:
+            b[pos], b[pos-12] = b[pos-12], b[pos]
+        else: 
+            b[pos], b[pos+4] = b[pos+4], b[pos]
+        h = mh(b)
+        successors.append( (g+h, b, g) ) 
+    print "successors:"
+    for s in successors: print_board(s)
+    return successors
+
+
+def solve(initial_state):
+    fringe = [ (0, initial_state, 0) ] #evaluation function (f = g+h); board; depth of state
+#    while len(fringe) > 0: #comment this out to actually run the program
+    for i in range(3):
+        curr = heappop(fringe)
+        print "curr", "f = ", curr[0], "depth = ", curr[2]
+        print_board(curr)
+        for s in successor(curr):
+            fringe.append(s)
+    return False
 
 if "__main__" == __name__:
     input_board_filename = str(sys.argv[1])
+    if(len(sys.argv) < 2):                                                                                
+        print("Please enter file name! python solver15.py input_board.txt")                                                          
+        sys.exit(0)
     initial_state = read_board(input_board_filename)
     if not check_parity(initial_state):
         print "This board is not solvable because of its parity."
         quit()
     solve(initial_state)
-
-
-# to use the heap, would need to store the states as a list with the cost and the board. e.g.  for s in successor(a):  heappush( fringe, (15, [ s ]) ) #priority queue for cost and tables so far
