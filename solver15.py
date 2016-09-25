@@ -72,13 +72,11 @@ def find_shortest_path_mh(pos, goal):
                 heappush(fringe, s) 
     
 def mh(board): #manhattan heuristic taking into account option of jumping between corners
-    #print "calculating manhattan distance for board: ", board
     total_moves = 0
     for i in range(N):
         if board[i] == 0: #empty tile
             continue
         total_moves += find_shortest_path_mh(i, board[i] - 1) #goal index is 1 less than the number on the tile
-    #print "total manhattan distance", total_moves
     return total_moves
 
 # function for generating various states of the puzzle
@@ -122,6 +120,7 @@ def successor(a):
             b[pos], b[pos+4] = b[pos+4], b[pos]
         h = mh(b)
         successors.append( (g+h, b, g) ) 
+    print "successors", successors
     return successors
 
 
@@ -135,7 +134,7 @@ def solve(initial_state):
             print "solution found. now need to backtrack."
             return True
         for s in successor(curr):
-            fringe.append(s)
+            heappush(fringe, s)
     return False
 
 if "__main__" == __name__:
