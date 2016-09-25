@@ -49,16 +49,59 @@ def mh(state, a): #manhattan heuristic
             a = a + abs(i // 4 - goal_index[0]) + abs(j - goal_index[1])
     return a 
     
-def find_shortest_path(pos, goal):
-    # want some kind of recursion, see which direction ends up at the goal first
-    return 0
+    
+def successor_mh(curr, goal):
+    successor = []
+    pos = curr[1]
+    depth = curr[0]
+    #case 1: left moves are allowed
+    if pos in set( range(N) ) - set( [4, 8] ): 
+        if pos in [0, 12]:
+            successor.append( (depth, pos+3) )
+        else: 
+            successor.append( (depth, pos-1) )
+    #case 2: right moves are allowed
+    if pos in set( range(N) ) - set( [7, 11] ): 
+        if pos in [3, 15]:
+            successor.append( (depth, pos-3) )
+        else:
+            successor.append( (depth, pos+1) )
+    #case 3: upward moves are allowed
+    if pos in set( range(N) ) - set( [1, 2] ): 
+        if pos in [0, 3]:
+            successor.append( (depth, pos+12) )
+        else: 
+            successor.append( (depth, pos-4) )
+    #case 4: downward moves are allowed
+    if pos in set( range(N) ) - set( [13, 14] ): 
+        if pos in [12, 15]:
+            successor.append( (depth, pos-12) )
+        else:
+            successor.append( (depth, pos+4) )
+    print "pos", pos, "goal", goal, "successor", successor
+    return successor
+
+def find_shortest_path_mh(pos, goal):
+    print "pos", pos
+    visited = set(pos)
+    fringe = [ (0, pos) ]
+    while True:
+        curr = heappop(fringe)
+        visited |= curr[1] #add position to explored
+        if curr[1] == goal:
+            return curr[0] #the minimum distance
+        for s in successor_mh(curr):
+            if s[1] not in visited and s not in fringe:
+                heappush(fringe, s) 
+    print "there was a bug"
     
 def mh(board): #manhattan heuristic taking into account option of jumping between corners
+    print "board", board
     total_moves = 0
     for i in range(N):
         if board[i] == 0: #empty tile
             continue
-        total_moves += find_shortest_path(i, board[i] - 1) #goal index is 1 less than the number on the tile
+        total_moves += find_shortest_path_mh(i, board[i] - 1) #goal index is 1 less than the number on the tile
     return total_moves
 
 # function for generating various states of the puzzle
@@ -114,6 +157,7 @@ def solve(initial_state):
         curr = heappop(fringe)
         print "curr", "f = ", curr[0], "depth = ", curr[2]
         print_board(curr)
+        #check is this the solution
         for s in successor(curr):
             fringe.append(s)
     return False
