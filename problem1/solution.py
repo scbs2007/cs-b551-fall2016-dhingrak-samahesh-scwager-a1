@@ -141,9 +141,7 @@ Ans.
 	You can use the function findFarthestCityFromEnteredCity() for finding it. 
 '''
 from collections import deque
-#from tempfile import TemporaryFile
 import sys, time, math
-#import numpy as np
 import heapq as hq
 
 finalOutput = deque() #Only used to display machine readable format of route
