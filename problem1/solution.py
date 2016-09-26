@@ -1,23 +1,104 @@
 #!/usr/local/bin/python3
 '''
-Answers:
-1.
+Q1. Which search algorithm seems to work best for each routing options?
+Ans. 
+	Routing Option		Routing Algorithm which seems to works best		Comments
+	--------------------------------------------------------------------------------------------------------------
+	segments		A*						BFS gives the same number of segments
+                                                                       	 	as A* but takes longer to find the
+                                                                        	route (usually).
+	--------------------------------------------------------------------------------------------------------------
+	distance		A*						If the distance between source and 
+										destination is small 
+	--------------------------------------------------------------------------------------------------------------
+	time			A*						
+	--------------------------------------------------------------------------------------------------------------
+	scenic			A*						 
+	--------------------------------------------------------------------------------------------------------------
 
-2.
+	Note: Regardless of the routing option BFS would give the same route because the order in which the nodes are 
+	inserted and removed from the fringe is fixed.
+	Similar note for DFS and IDS.
+	
 
-3.
+Q2. Which algorithm is fastest in terms of the amount of computation time required by your program, and by how much, according to your experiments?
+Ans. 
+	Routing Option          Routing Algorithm which is fastest
+                                (in terms of computation time)    
+        ------------------------------------------------------------
+        segments                A*				
+        ------------------------------------------------------------
+        distance                A*					
+        ------------------------------------------------------------
+        time                    A*                                              
+        ------------------------------------------------------------
+        scenic                  A*                                              
+        ------------------------------------------------------------
 
-4.
 
-5.
+	Sample for route finding from Bloomington,_Indiana to Columbus,_Ohio. Averaged execution time - code run 100 times
+
+	Routing Option          Routing Algorithm which is fastest		Seconds taken to find route
+				(in terms of computation time)			(Excluding time to create Graph)
+	--------------------------------------------------------------------------------------------------------
+        segments                A*                                              BFS - 0.0193
+                                                                                DFS - 0.065
+                                                                                IDS - 0.96
+                                                                                A*  - 0.0032
+	--------------------------------------------------------------------------------------------------------
+        distance                A*                                              BFS - 0.0192
+                                                                                DFS - 0.053
+                                                                                IDS - 0.855
+                                                                                A*  - 0.0018
+	--------------------------------------------------------------------------------------------------------
+        time                    A*                                              BFS - 0.0199
+                                                                                DFS - 0.065
+                                                                                IDS - 0.87
+                                                                                A*  - 0.0027
+	--------------------------------------------------------------------------------------------------------
+        scenic                  A*                                              BFS - 0.0199
+                                                                                DFS - 0.059
+                                                                                IDS - 0.091
+                                                                                A*  - 0.0082
+	--------------------------------------------------------------------------------------------------------
+	
+	Note: 	A* shows a very significant improvement over all other routing algorithms. This difference keeps increasing as the distance between source and 
+		destination increases.
+
+Q3. Which algorithm requires the least memory, and by how much, according to your experiments?
+Ans. A* requires the least amount of memory. Also BFS takes the most amount of memory.
+
+Q4. Which heuristic function did you use, how good is it, and how might you make it better?
+Ans.
+Base Heuristic used - Calculated the distance between two points on the globe using the Haversine Formula. Also for cities and junctions which have missing latitude 
+longitude values: have found out the neighbors of these locations and found used that neighbor's heuristic for this location. Also, note that if a node's all 
+neighbors also do not have latitude longitude values then we look at their neighbors and so on. Also,
+
+	For segments: 	Have used the Base Heuristic * Segments per mile as the heuristic cost. This value segments per mile has been calculated by taking the total 
+			length in the graph divided by the total number of segments. 
+			(Total length and total number of segments is calculated while reading in the values from the file)
+
+	For distance: 	Have used the base heuristic value.
+
+	For time: 	Have used the base heuristic value divided by the maximum allowed speed ie = 70 as the heuristic value.
+
+	For scenic: 	Here we try to allocate penalties for highways. We multiply the base heuristic value by 2(max speed on that road - 54) if the road segment
+			has a speed limit >= 55. Else if the max. speed is < 55 we just take the base heuristic value as the heuristic.
+
+Q5. Supposing you start in Bloomington, which city should you travel to if you want to take the longest possible drive (in miles) that is still the shortest path to 
+that city? (In other words, which city is furthest from Bloomington?)
+Ans.
+	Skagway,_Alaska.
+	Used Dijkstra's to solve it. The last city that is popped from the fringe is the furthest.
+	You can use the function findFarthestCityFromCity() for finding the farthest city from Bloomington,_Indiana.
 '''
-from collections import deque #, OrderedDict
+from collections import deque
 #from tempfile import TemporaryFile
 import sys, time, math
 #import numpy as np
 import heapq as hq
 
-finalOutput = deque()#Only used to display machine readable format of route
+finalOutput = deque() #Only used to display machine readable format of route
 '''
 Represents all properties of a city - its name, latitude, longitude and its neighbors.
 neighbors is a dictionary with name of connected city as key and a tuple (length, speed, time, highway name) as value.
@@ -42,9 +123,6 @@ class City:
 	def getNeighboringCitiesNames(self):
 		return self.neighbors.keys()
 
-	def getWeight(self, neighborName):
-		return self.neighbors[neighborName]
-
 '''
 Represents the entire graph. 
 nodeList is a dictionary which stores name of the city as key and the City Object as value
@@ -58,6 +136,7 @@ class RoadNetwork:
 		self.totalGraphDistance = 0 #Total Road Length of Graph
 		self.totalGraphSegments = 0 #Total edges in Graph
 		self.segmentsPerMile = 0.0 #Average segments per mile in graph
+		self.maxLengthOfFringe = 0 #To Calculate length of fringe
 		#self.haversine = np.zeros(shape=(5498, 5498)) #[[0.0 for x in range(5478)] for y in range(5478)] #To store precomputed distance between cities
 		#self.cityIntegerMapping = {} 
 	'''
@@ -83,7 +162,6 @@ class RoadNetwork:
 	
 	def readCityGpsFile(self):
 		citiesFile = open("city-gps.txt", "r")
-		#dictFile = open("dictFile.txt", "w")
 		#count = 0
 		for line in citiesFile:
 			city = line.split()
@@ -92,14 +170,6 @@ class RoadNetwork:
 			self.nodeList[cityName] = node
 			#self.cityIntegerMapping[cityName] = count
 			#count += 1
-		'''
-		dictFile.write("self.cityIntegerMapping = {")
-		for k, v in self.cityIntegerMapping.items():
-			dictFile.write("'"+k+"'" + ":" + str(v) +",")
-		dictFile.write("}")
-		dictFile.close()
-		sys.exit(0)
-		'''
 		#self.nodeList = {line.split()[0]: City(*line.split()) for line in citiesFile}
 		#citiesFile.close()
 
@@ -111,11 +181,7 @@ class RoadNetwork:
 			if("0" in segment or len(segment) is 4):#segment[2] == "0" or segment[3] == "0" or len(segment) == 4:
 				continue
 			firstCity, secondCity, length, speed, highwayName = segment
-			'''if (len(segment) == 5):
-				firstCity, secondCity, length, speed, highwayName = segment
-			elif (len(segment) == 4):
-				firstCity, secondCity, length, highwayName = segment
-			'''
+			
 			#Handling Junction names - these names are not present in city-gps.txt
 			if(firstCity not in self.nodeList):
 				self.nodeList[firstCity] = City(firstCity, None, None)
@@ -163,7 +229,8 @@ class RoadNetwork:
 					q.append(neighboringCityObj)
 					if(neighboringCityObj not in childParentDict):
 						childParentDict[neighboringCityObj] = currentCityObj
-				
+			if(len(q) > self.maxLengthOfFringe):
+				self.maxLengthOfFringe = len(q)
 		return False
 
 	def createRouteFromDict(self, childParentDict, endCityObj):
@@ -177,14 +244,14 @@ class RoadNetwork:
 	'''
 	def displayRoute(self, startCityName):
 		startCityObj = self.nodeList[startCityName]
-		print("\nMove from".ljust(40) + "To".ljust(40) + "On Road".ljust(30) + "Total Miles".ljust(20) + "Miles/Hr".ljust(13) + "Total Hrs." + "\n" + "-"*155)
+		print("\nMove from".ljust(40) + "To".ljust(40) + "On Road".ljust(35) + "Total Miles".ljust(20) + "Miles/Hr".ljust(13) + "Total Hrs." + "\n" + "-"*155)
 		while(startCityObj in self.followThisRoute):
 			neighboringCityObj = self.followThisRoute[startCityObj]
 			distance, speed, time, highwayName = startCityObj.neighbors[neighboringCityObj.cityName]
 			self.totalMiles += distance
 			self.totalHours += time
 			finalOutput.append(startCityObj.cityName)
-			print(startCityObj.cityName.ljust(40) + neighboringCityObj.cityName.ljust(40) + highwayName.ljust(30) + str(distance).ljust(20) + str(speed).ljust(15) + str(time))
+			print(startCityObj.cityName.ljust(40) + neighboringCityObj.cityName.ljust(40) + highwayName.ljust(35) + str(distance).ljust(20) + str(speed).ljust(15) + str(time))
 			startCityObj = neighboringCityObj
 		print("\nTotal Travel Miles: " + str(self.totalMiles) + "\nTotal Travel Hours: " + str(round(self.totalHours,4)))
 		finalOutput.append(startCityObj.cityName)
@@ -207,53 +274,55 @@ class RoadNetwork:
 					q.append(neighboringCityObj)
 					if(neighboringCityObj not in childParentDict):
 						childParentDict[neighboringCityObj] = currentCityObj
+			if(len(q) > self.maxLengthOfFringe):
+				self.maxLengthOfFringe = len(q)
 		return False		
 
-	    def recursive_dls(self, currentCityObj, startCityName, endCityName, childParentDict, limit):
-        if(currentCityObj.cityName == endCityName):
-            self.createRouteFromDict(childParentDict, currentCityObj)
-            return True
-        elif limit == 0:
-            return "cutoff"
-        else:
-            cutoff_occurred = False
-            for neighboringCityName, edgeWeight in currentCityObj.getAllNeighboringCities():
-                neighboringCityObj = self.nodeList[neighboringCityName]
-                childParentDict[neighboringCityObj] = currentCityObj
-                result = self.recursive_dls(self.nodeList[neighboringCityName], startCityName, endCityName, childParentDict, limit-1)
-                if result == "cutoff":
-                    cutoff_occurred = True
-                elif result != "failure":
-                    return result
-            return "cutoff" if cutoff_occurred else "failure"
+	def recursive_dls(self, currentCityObj, startCityName, endCityName, childParentDict, limit):
+		if(currentCityObj.cityName == endCityName):
+			self.createRouteFromDict(childParentDict, currentCityObj)
+			return True
+		elif limit == 0:
+			return "cutoff"
+		else:
+			cutoff_occurred = False
+			for neighboringCityName in currentCityObj.getNeighboringCitiesNames():
+				neighboringCityObj = self.nodeList[neighboringCityName]
+				childParentDict[neighboringCityObj] = currentCityObj
+				result = self.recursive_dls(self.nodeList[neighboringCityName], startCityName, endCityName, childParentDict, limit-1)
+			if result == "cutoff":
+				cutoff_occurred = True
+			elif result != "failure":
+				return result
+		return "cutoff" if cutoff_occurred else "failure"
 
-    def dls(self, startCityName, endCityName, limit):
-        childParentDict = {}
-        return self.recursive_dls(self.nodeList[startCityName], startCityName, endCityName, childParentDict, limit)
+	def dls(self, startCityName, endCityName, limit):
+		childParentDict = {}
+		return self.recursive_dls(self.nodeList[startCityName], startCityName, endCityName, childParentDict, limit)
 
-    def recursive_ids(self, startCityName, endCityName):
-        for depth in range(5478):
-            print("depth", depth)
-            result = self.dls(startCityName, endCityName, depth)
-            print("result", result)
-            if result == "cutoff": continue
-            if result == "failure":
-                print("path not found :(")
-                return False
-            else: return True
+	def recursive_ids(self, startCityName, endCityName):
+		for depth in range(5478):
+			print("depth", depth)
+			result = self.dls(startCityName, endCityName, depth)
+			print("result", result)
+			if result == "cutoff": 
+				continue
+			if result == "failure":
+				print("path not found :(")
+				return False
+			else: 
+				return True
 	
 	def ids(self, startCityName, endCityName):
 		startCityObj = self.nodeList[startCityName]
-		q = deque()
+		stack = deque()
 		
-		for i in range(5478): # no. of cities = 5478. In the worst case (impractical) we can have all cities on a single path and we want to go from root to leaf.
+		for i in range(5478): #no. of cities=5478. In the worst case (impractical) we can have all cities on a single path and we want to go from root to leaf.
 			visited = {} #Visited stores the cityObj as key and the depth when that city was visited as value
 			childParentDict = {}
-			q.append((startCityObj, 0)) #Start City Object and Iteration Depth
-			while(q):
-				#print("Stack: " + " ".join([obj.cityName for obj,d in q]))
-				currentCityObj, atDepth = q.pop()
-				#print("DEPTH: " + str(atDepth) + "Popped: " + currentCityObj.cityName)
+			stack.append((startCityObj, 0)) #Start City Object and Iteration Depth
+			while(stack):
+				currentCityObj, atDepth = stack.pop()
 				if(currentCityObj.cityName == endCityName):
 					self.createRouteFromDict(childParentDict, currentCityObj)
 					return True
@@ -261,17 +330,17 @@ class RoadNetwork:
 				if(atDepth != i):
 					for neighboringCityName in currentCityObj.getNeighboringCitiesNames():
 						neighboringCityObj = self.nodeList[neighboringCityName]
-						#print("Visited: " + " ".join([obj.cityName for obj in visited]))
 						flag = False
 						depthForThisNode = atDepth + 1
 						if(neighboringCityObj not in visited or visited[neighboringCityObj] > depthForThisNode):
-							if(neighboringCityObj in visited and visited[neighboringCityObj] > depthForThisNode):
+							if(neighboringCityObj not in visited or visited[neighboringCityObj] > depthForThisNode):
 								flag = True
-							q.append((neighboringCityObj, depthForThisNode))
+							stack.append((neighboringCityObj, depthForThisNode))
 							visited[neighboringCityObj] = depthForThisNode
 							if(neighboringCityObj not in childParentDict or flag):
 								childParentDict[neighboringCityObj] = currentCityObj
-				#print("---")
+					if(len(stack) > self.maxLengthOfFringe):
+						self.maxLengthOfFringe = len(stack)
 		return False
 	
 	def checkMissingLatLongValues(self, startCityName, endCityName):
@@ -343,6 +412,9 @@ class RoadNetwork:
 					fScore[neighbor] = (gScore[neighbor] + self.calculateHaversineDistance(float(neighborCityObj.latitude), float(neighborCityObj.longitude), endLat, endLong) * self.segmentsPerMile) if neighborCityObj.latitude != None else (gScore[neighbor] + self.generateHScore([(possibleGScore, neighbor, currentCityName)], endCityObj, routingOption))
 				elif(routingOption == 'scenic'):
 					fScore[neighbor] = (gScore[neighbor] + self.calculateHaversineDistance(float(neighborCityObj.latitude), float(neighborCityObj.longitude), endLat, endLong) * self.getPenalty(currentCityName, neighbor)) if neighborCityObj.latitude != None else (gScore[neighbor] + self.generateHScore([(possibleGScore, neighbor,     currentCityName)], endCityObj, routingOption))
+			
+			if(len(pq) > self.maxLengthOfFringe):
+				self.maxLengthOfFringe = len(pq)
 			pq = [] # Have to do this because there's no inbuilt way to update priority of a value in pq
 		return False
 
@@ -408,6 +480,37 @@ class RoadNetwork:
 		long2radians = math.radians(long2degrees)
 		return round(2 * 3959 * math.asin(math.sqrt(pow(math.sin((lat2radians - lat1radians) / 2), 2) + math.cos(lat1radians) * math.cos(lat2radians) * pow(math.sin((long2radians - long1radians) / 2), 2))), 3)
 
+	def findFarthestCityFromCity(self, startCityName, routingOption):
+		closedSet = set() #set of nodes already evaluated
+		openSet = set([startCityName]) #set of currently discovered nodes still to be evaluated
+		pq = [] #Used to find smallest fScore Value
+		startCityObj = self.nodeList[startCityName]
+		startLat = float(startCityObj.latitude)
+		startLong = float(startCityObj.longitude)
+		
+		gScore = {startCityName: 0} #For each node - cost of getting from start node to that node 
+		fScore = {startCityName: 0}
+		
+		while(openSet):
+			for item in [(val, key) for key, val in fScore.items() if key in openSet]:
+				hq.heappush(pq, item)
+				
+			currentCityName = hq.heappop(pq)[1]
+			currentCityObj = self.nodeList[currentCityName]
+			openSet.discard(currentCityName)
+			closedSet.add(currentCityName)
+			for neighbor in currentCityObj.getNeighboringCitiesNames():
+				if(neighbor in closedSet):
+					continue
+				possibleGScore = gScore[currentCityName] + currentCityObj.neighbors[neighbor][0]
+				if(neighbor not in openSet):
+					openSet.add(neighbor)
+				elif(possibleGScore >= gScore[neighbor]):
+					continue
+				gScore[neighbor] = possibleGScore
+				fScore[neighbor] = (gScore[neighbor]) # + self.calculateHaversineDistance(float(neighborCityObj.latitude), float(neighborCityObj.longitude), endLat, endLong)) if neighborCityObj.latitude != None else (gScore[neighbor] + self.generateHScore([(possibleGScore, neighbor, currentCityName)], endCityObj, routingOption))
+			pq = []
+	 	return currentCityName
 
 def validateRoutingOptions(routingAlgorithm, routingOption):
     if(routingOption not in ("segments", "distance", "time", "scenic")):
@@ -431,33 +534,44 @@ def main():
 		sys.exit(0)
 	'''
 	startCityName, endCityName, routingOption, routingAlgorithm = enteredValue[1:5]
-	#validateRoutingOptions(routingAlgorithm, routingOption)
-	startTime = time.time()
+	
+	validateRoutingOptions(routingAlgorithm, routingOption)
+	#totalTime = 0.0 #Used fo rmeasuring time of route finding for numberOfIterations
+	#numberOfIterations = 100
+	#for i in range(numberOfIterations):
+	#	global finalOutput
+	#	finalOutput = deque()
 	graph = RoadNetwork()
 	graph.readCityGpsFile()
 	
 	#graph.haversine = graph.createHaversineDistanceFile()
 	#if routingAlgorithm == "astar":
 	#	graph.prePopulateHaversineMatrix()
-	
+	startTime = time.time()
 	graph.readRoadSegmentsFile()
 	endTime = time.time()
-	#validateCities(graph, startCityName, endCityName)
+	validateCities(graph, startCityName, endCityName)
+	
 	if(startCityName == endCityName):
 		print("You are already there!")
 		sys.exit(0)	
 	#graph.displayGraph()
-	print("Created road network in: " + str(round((endTime - startTime)/60, 5)) + " min.")
+	#print("Created road network in: " + str(round((endTime - startTime)/60, 5)) + " min.")
 	startTime = time.time()
-		
 	foundRoute = graph.findRoute(startCityName, endCityName, routingOption, routingAlgorithm)
 	endTime = time.time()
+	#totalTime += (endTime - startTime)
+	#	continue	
 	if(foundRoute):
 		graph.displayRoute(startCityName)
+		print("Max. Length of Fringe: " + str(graph.maxLengthOfFringe))
 		print("Found route in: " + str(round((endTime - startTime)/60, 5)) + " min.")
 		print("\nMachine Readable Format:\n" + " ".join(finalOutput))
 	else:
 		print("Path not found! :(")
+	
+	#print(routingOption + ", " + routingAlgorithm + ": " + str(totalTime / numberOfIterations))
+	#print(graph.findFarthestCityFromCity("Bloomington,_Indiana", "distance"))
 		
 if __name__ == "__main__":
 	main()
