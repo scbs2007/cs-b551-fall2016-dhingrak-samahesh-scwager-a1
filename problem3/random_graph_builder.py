@@ -1,10 +1,13 @@
-# Author: Sanna Wager - code modified and largely based on work by Tejas K 
-# https://github.com/tk26/Random-Graph-Builder
+'''
+code modified and largely based on work by Tejas K 
+https://github.com/tk26/Random-Graph-Builder
 
-# Generates a random graph of friends
-# Run from shell: python random_graph_builder.py <NumberOfPeople>
-# See output file: myfriends_tk.txt
-# More: Lower the range of k to get a thinner web
+to run: python random_graph_builder <int: number of people> <int: maximum number of friends per person>
+
+Generates a random graph of friends
+See output file: myfriends_tk.txt
+'''
+
 import random
 import numpy as np
 import sys
@@ -19,7 +22,6 @@ friends = [ set() for x in np.random.choice(pool, pool/5, replace=False) ]
 for i in range(0, len(friends)):
     circle = set( np.random.choice(pool, np.random.choice(range(1,max_circle+1))) )
     friends[i] |= circle
-print friends
 
 for i in range(0, len(friends)):
     circle = list(friends[i])
