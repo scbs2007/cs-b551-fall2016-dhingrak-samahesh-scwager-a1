@@ -138,7 +138,7 @@ Q5. Supposing you start in Bloomington, which city should you travel to if you w
 Ans.
 	Skagway,_Alaska.
 	Used Dijkstra's to solve it. The last city that is popped from the fringe is the furthest.
-	You can use the function findFarthestCityFromEnteredCity() for finding it. (Please uncomment Line 587)
+	You can use the function findFarthestCityFromEnteredCity() for finding it. 
 '''
 from collections import deque
 #from tempfile import TemporaryFile
