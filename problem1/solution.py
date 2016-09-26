@@ -1,20 +1,20 @@
-#!/usr/local/bin/python3
 '''
 Q1. Which search algorithm seems to work best for each routing options?
 Ans. 
 	Routing Option		Routing Algorithm which seems to works best		Comments
 	--------------------------------------------------------------------------------------------------------------
-	segments		A*						BFS gives the same number of segments
-                                                                       	 	as A* but takes longer to find the
-                                                                        	route (usually).
+	segments		A*						BFS, IDS give the same number of 
+										segments as A* but take longer to find 
+										the route most of the time - 
+										i.e. unless the start and end city are 
+										very close to each other.
 	--------------------------------------------------------------------------------------------------------------
-	distance		A*						If the distance between source and 
-										destination is small 
-	--------------------------------------------------------------------------------------------------------------
-	time			A*						
-	--------------------------------------------------------------------------------------------------------------
-	scenic			A*						 
-	--------------------------------------------------------------------------------------------------------------
+	distance		A*						All of BFS, DFS, IDS give suboptimal 
+	----------------------------------------------------------------------	solutions for distance, time and
+	time			A*						scenic. 
+	----------------------------------------------------------------------	i.e. unless the start and end city are 
+	scenic			A*						very close to each other.
+	----------------------------------------------------------------------
 
 	Note: Regardless of the routing option BFS would give the same route because the order in which the nodes are 
 	inserted and removed from the fringe is fixed.
@@ -34,7 +34,6 @@ Ans.
         ------------------------------------------------------------
         scenic                  A*                                              
         ------------------------------------------------------------
-
 
 	Sample for route finding from Bloomington,_Indiana to Columbus,_Ohio. Averaged execution time - code run 100 times
 
@@ -65,8 +64,53 @@ Ans.
 	Note: 	A* shows a very significant improvement over all other routing algorithms. This difference keeps increasing as the distance between source and 
 		destination increases.
 
+
 Q3. Which algorithm requires the least memory, and by how much, according to your experiments?
-Ans. A* requires the least amount of memory. Also BFS takes the most amount of memory.
+Ans. 	Iterative Deepening Search requires the least amount of memory. 
+	Also, depending on the start and end cities the maximum number of nodes in the fringe varies for BFS and DFS (See samples below). In the worst case the 
+	maximum number of nodes that can possibly be in the fringe for DFS would be the total number of cities in the graph. Whereas it could possibly be much more 
+	than that for BFS.
+ 	
+	IDS takes 99.98% less memory than BFS for first sample below and 99.10% less memory than DFS for sample 2:
+
+	Sample for route from Bloomington,_Indiana to Waco,_Texas:
+	
+	Routing Algorithm		Routing Option				Number of Nodes in Fringe
+	--------------------------------------------------------------------------------------------------------
+	A*				segments				201
+					------------------------------------------------------------------------
+					distance				165
+					------------------------------------------------------------------------
+					time					266
+					------------------------------------------------------------------------
+					scenic					510
+	--------------------------------------------------------------------------------------------------------
+	BFS				All routing options			434867	
+	--------------------------------------------------------------------------------------------------------
+	DFS				All routing options			1623
+	--------------------------------------------------------------------------------------------------------
+	IDS				All routing options			60
+	--------------------------------------------------------------------------------------------------------
+
+	Sample for route from Bloomington,_Indiana to Columbus,_Ohio
+	
+	Routing Algorithm		Routing Option				Number of Nodes in Fringe
+	--------------------------------------------------------------------------------------------------------
+	A*				segments				37
+					------------------------------------------------------------------------
+					distance				29
+					------------------------------------------------------------------------
+					time					26
+					------------------------------------------------------------------------
+					scenic					63
+	--------------------------------------------------------------------------------------------------------
+	BFS				All routing options			1805	
+	--------------------------------------------------------------------------------------------------------
+	DFS				All routing options			2682
+	--------------------------------------------------------------------------------------------------------
+	IDS				All routing options			24
+	--------------------------------------------------------------------------------------------------------
+	
 
 Q4. Which heuristic function did you use, how good is it, and how might you make it better?
 Ans.
@@ -80,17 +124,22 @@ neighbors also do not have latitude longitude values then we look at their neigh
 
 	For distance: 	Have used the base heuristic value.
 
-	For time: 	Have used the base heuristic value divided by the maximum allowed speed ie = 70 as the heuristic value.
+	For time: 	Have used the base heuristic value divided by the maximum allowed speed ie = 65 miles/hr as the heuristic value.
 
 	For scenic: 	Here we try to allocate penalties for highways. We multiply the base heuristic value by 2(max speed on that road - 54) if the road segment
 			has a speed limit >= 55. Else if the max. speed is < 55 we just take the base heuristic value as the heuristic.
+These heuristics give good results.
+
+To further improve the heuristics we can instead of taking the maximum speed/average segments per mile, can look into taking those values of the route dynamically.
+This is keeping in mind that there migh be incorrect data/ anomalies which would severely affect the average.
+
 
 Q5. Supposing you start in Bloomington, which city should you travel to if you want to take the longest possible drive (in miles) that is still the shortest path to 
 that city? (In other words, which city is furthest from Bloomington?)
 Ans.
 	Skagway,_Alaska.
 	Used Dijkstra's to solve it. The last city that is popped from the fringe is the furthest.
-	You can use the function findFarthestCityFromCity() for finding the farthest city from Bloomington,_Indiana.
+	You can use the function findFarthestCityFromEnteredCity() for finding it. (Please uncomment Line 574)
 '''
 from collections import deque
 #from tempfile import TemporaryFile
@@ -114,7 +163,7 @@ class City:
 	def addNeighbor(self, neighborName, length, speed, nameOfHighway):
 		distance = int(length)
 		speedLimit = float(speed)
-		time = round(distance/speedLimit, 2) #round(distance/70.0, 2) if speed=="0" else round(distance/speedLimit, 2)
+		time = round(distance/speedLimit, 2) #round(distance/65.0, 2) if speed=="0" else round(distance/speedLimit, 2)
 		self.neighbors[neighborName] = (distance, speedLimit, time, nameOfHighway)
 	
 	def getAllInfoForNeighboringCities(self):
@@ -407,7 +456,7 @@ class RoadNetwork:
 				if(routingOption == 'distance'):
 					fScore[neighbor] = (gScore[neighbor] + self.calculateHaversineDistance(float(neighborCityObj.latitude), float(neighborCityObj.longitude), endLat, endLong)) if neighborCityObj.latitude != None else (gScore[neighbor] + self.generateHScore([(possibleGScore, neighbor, currentCityName)], endCityObj, routingOption))
 				elif(routingOption == 'time'):
-					fScore[neighbor] = (gScore[neighbor] + self.calculateHaversineDistance(float(neighborCityObj.latitude), float(neighborCityObj.longitude), endLat, endLong)/70) if neighborCityObj.latitude != None else (gScore[neighbor] + self.generateHScore([(possibleGScore, neighbor, currentCityName)], endCityObj, routingOption))
+					fScore[neighbor] = (gScore[neighbor] + self.calculateHaversineDistance(float(neighborCityObj.latitude), float(neighborCityObj.longitude), endLat, endLong)/65) if neighborCityObj.latitude != None else (gScore[neighbor] + self.generateHScore([(possibleGScore, neighbor, currentCityName)], endCityObj, routingOption))
 				elif(routingOption == 'segments'):
 					fScore[neighbor] = (gScore[neighbor] + self.calculateHaversineDistance(float(neighborCityObj.latitude), float(neighborCityObj.longitude), endLat, endLong) * self.segmentsPerMile) if neighborCityObj.latitude != None else (gScore[neighbor] + self.generateHScore([(possibleGScore, neighbor, currentCityName)], endCityObj, routingOption))
 				elif(routingOption == 'scenic'):
@@ -455,7 +504,7 @@ class RoadNetwork:
 					hq.heappush(pq, item)
 				return hq.heappop(pq)[0]
 			elif(routingOption == 'time'):
-				for item in [(gScore + self.calculateHaversineDistance(float(self.nodeList[neighborName].latitude), float(self.nodeList[neighborName].longitude), float(goalCityObj.latitude), float(goalCityObj.longitude))/70, neighborName) for gScore, neighborName, parent in nonJunctionCities]:
+				for item in [(gScore + self.calculateHaversineDistance(float(self.nodeList[neighborName].latitude), float(self.nodeList[neighborName].longitude), float(goalCityObj.latitude), float(goalCityObj.longitude))/65, neighborName) for gScore, neighborName, parent in nonJunctionCities]:
 					hq.heappush(pq, item)
 				return hq.heappop(pq)[0]
 			elif(routingOption == 'segments'):
@@ -480,7 +529,7 @@ class RoadNetwork:
 		long2radians = math.radians(long2degrees)
 		return round(2 * 3959 * math.asin(math.sqrt(pow(math.sin((lat2radians - lat1radians) / 2), 2) + math.cos(lat1radians) * math.cos(lat2radians) * pow(math.sin((long2radians - long1radians) / 2), 2))), 3)
 
-	def findFarthestCityFromCity(self, startCityName, routingOption):
+	def findFarthestCityFromEnteredCity(self, startCityName, routingOption):
 		closedSet = set() #set of nodes already evaluated
 		openSet = set([startCityName]) #set of currently discovered nodes still to be evaluated
 		pq = [] #Used to find smallest fScore Value
@@ -571,7 +620,7 @@ def main():
 		print("Path not found! :(")
 	
 	#print(routingOption + ", " + routingAlgorithm + ": " + str(totalTime / numberOfIterations))
-	#print(graph.findFarthestCityFromCity("Bloomington,_Indiana", "distance"))
+	#print(graph.findFarthestCityFromEnteredCity("Bloomington,_Indiana", "distance"))
 		
 if __name__ == "__main__":
 	main()
