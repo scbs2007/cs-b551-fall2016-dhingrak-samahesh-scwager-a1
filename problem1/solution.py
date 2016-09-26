@@ -134,12 +134,11 @@ To further improve the heuristics we can instead of taking the maximum speed/ave
 This is keeping in mind that there migh be incorrect data/ anomalies which would severely affect the average.
 
 
-Q5. Supposing you start in Bloomington, which city should you travel to if you want to take the longest possible drive (in miles) that is still the shortest path to 
-that city? (In other words, which city is furthest from Bloomington?)
+Q5. Supposing you start in Bloomington, which city should you travel to if you want to take the longest possible drive (in miles) that is still the shortest path to 	that city? (In other words, which city is furthest from Bloomington?)
 Ans.
 	Skagway,_Alaska.
 	Used Dijkstra's to solve it. The last city that is popped from the fringe is the furthest.
-	You can use the function findFarthestCityFromEnteredCity() for finding it. (Please uncomment Line 574)
+	You can use the function findFarthestCityFromEnteredCity() for finding it. (Please uncomment Line 587)
 '''
 from collections import deque
 #from tempfile import TemporaryFile
@@ -163,7 +162,7 @@ class City:
 	def addNeighbor(self, neighborName, length, speed, nameOfHighway):
 		distance = int(length)
 		speedLimit = float(speed)
-		time = round(distance/speedLimit, 2) #round(distance/65.0, 2) if speed=="0" else round(distance/speedLimit, 2)
+		time = round(distance/speedLimit, 2)
 		self.neighbors[neighborName] = (distance, speedLimit, time, nameOfHighway)
 	
 	def getAllInfoForNeighboringCities(self):
@@ -186,48 +185,22 @@ class RoadNetwork:
 		self.totalGraphSegments = 0 #Total edges in Graph
 		self.segmentsPerMile = 0.0 #Average segments per mile in graph
 		self.maxLengthOfFringe = 0 #To Calculate length of fringe
-		#self.haversine = np.zeros(shape=(5498, 5498)) #[[0.0 for x in range(5478)] for y in range(5478)] #To store precomputed distance between cities
-		#self.cityIntegerMapping = {} 
-	'''
-	#Used to create the haversine array - Precomputed this distance for each pair of city to save on computation time during finding the route using a*
-	def prePopulateHaversineMatrix(self):
-		self.haversine = np.load("haversineDistances.npy")
-
-	#Used to create the haversineDistances.npy file
-	def createHaversineDistanceFile(self):
-		cityNameList = self.nodeList.keys()
-		for name1 in cityNameList:
-			for name2 in cityNameList:
-				cityObj1 = self.nodeList[name1]
-				cityObj2 = self.nodeList[name2]
-				if name1 == name2:
-					self.haversine[self.cityIntegerMapping[name1]][self.cityIntegerMapping[name2]] = 0.0
-				if name1.startswith("Jct") or name2.startswith("Jct"):
-					continue
-				#self.haversine[self.cityIntegerMapping[name1]][self.cityIntegerMapping[name2]] = self.calculateHaversineDistance(float(cityObj1.latitude), float(cityObj1.longitude), float(cityObj2.latitude), float(cityObj2.longitude))
-		np.save("haversineDistances", self.haversine)
-		sys.exit(0)
-	'''
 	
 	def readCityGpsFile(self):
 		citiesFile = open("city-gps.txt", "r")
-		#count = 0
 		for line in citiesFile:
 			city = line.split()
 			node = City(*city)
 			cityName = city[0]
 			self.nodeList[cityName] = node
-			#self.cityIntegerMapping[cityName] = count
-			#count += 1
-		#self.nodeList = {line.split()[0]: City(*line.split()) for line in citiesFile}
-		#citiesFile.close()
+		citiesFile.close()
 
 	def readRoadSegmentsFile(self):
 		segmentsFile =  open("road-segments.txt", "r")
 		for line in segmentsFile:
 			segment = line.split()
 			#Handling missing speed/length values in file - Will ignore that record.
-			if("0" in segment or len(segment) is 4):#segment[2] == "0" or segment[3] == "0" or len(segment) == 4:
+			if("0" in segment or len(segment) is 4):
 				continue
 			firstCity, secondCity, length, speed, highwayName = segment
 			
@@ -242,7 +215,7 @@ class RoadNetwork:
 			self.totalGraphSegments += 1
 			
 		self.segmentsPerMile = self.totalGraphSegments / float(self.totalGraphDistance)
-		#segmentsFile.close()
+		segmentsFile.close()
 		#self.displayGraph()
 
 	def displayGraph(self):
@@ -410,7 +383,7 @@ class RoadNetwork:
 		elif(routingOption == 'scenic'):
 			length, speed = self.nodeList[currentCityName].neighbors[neighbor][1:3]
 			if(speed >= 55):	
-				return gScore[currentCityName] + length * 2 * (speed - 54) # Adding a penalty of (speed - 55) if it is a highway
+				return gScore[currentCityName] + length * 2 * (speed - 54) # Adding a penalty of 2 * (speed - 54) if it is a highway
 			else:
 				return gScore[currentCityName] + length		
 
@@ -445,7 +418,6 @@ class RoadNetwork:
 				if(neighbor in closedSet):
 					continue
 				possibleGScore = self.findPossibleGScore(routingOption, gScore, currentCityName, neighbor)
-				#possibleGScore = gScore[currentCityName] + currentCityObj.neighbors[neighbor][0]
 				if(neighbor not in openSet):
 					openSet.add(neighbor)
 				elif(possibleGScore >= gScore[neighbor]):
@@ -557,7 +529,7 @@ class RoadNetwork:
 				elif(possibleGScore >= gScore[neighbor]):
 					continue
 				gScore[neighbor] = possibleGScore
-				fScore[neighbor] = (gScore[neighbor]) # + self.calculateHaversineDistance(float(neighborCityObj.latitude), float(neighborCityObj.longitude), endLat, endLong)) if neighborCityObj.latitude != None else (gScore[neighbor] + self.generateHScore([(possibleGScore, neighbor, currentCityName)], endCityObj, routingOption))
+				fScore[neighbor] = gScore[neighbor]
 			pq = []
 	 	return currentCityName
 
@@ -576,12 +548,6 @@ def validateCities(graph, startCity, endCity):
 
 def main():
 	enteredValue = sys.argv
-	
-	'''
-	if(len(sys.argv)):
-		print("Please enter all arguments! Execution: python3 solution.py <Source City> <Destination City> <Routing Option> <Routing Algorithm>")
-		sys.exit(0)
-	'''
 	startCityName, endCityName, routingOption, routingAlgorithm = enteredValue[1:5]
 	
 	validateRoutingOptions(routingAlgorithm, routingOption)
@@ -593,9 +559,6 @@ def main():
 	graph = RoadNetwork()
 	graph.readCityGpsFile()
 	
-	#graph.haversine = graph.createHaversineDistanceFile()
-	#if routingAlgorithm == "astar":
-	#	graph.prePopulateHaversineMatrix()
 	startTime = time.time()
 	graph.readRoadSegmentsFile()
 	endTime = time.time()
@@ -605,7 +568,7 @@ def main():
 		print("You are already there!")
 		sys.exit(0)	
 	#graph.displayGraph()
-	#print("Created road network in: " + str(round((endTime - startTime)/60, 5)) + " min.")
+	print("Created road network in: " + str(round((endTime - startTime)/60, 5)) + " min.")
 	startTime = time.time()
 	foundRoute = graph.findRoute(startCityName, endCityName, routingOption, routingAlgorithm)
 	endTime = time.time()
