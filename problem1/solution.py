@@ -1,4 +1,22 @@
 '''
+Formulation - 	The cities have been made into nodes in the graph.
+		The RoadNetwork class below mainly stores a dictinary with key as the City Name and the value as the corresponding City Object.
+		The City class stores all the details of a city including the city name, latitude, longitude value and a dict with key as neighboring city name and 
+		value as a tuple with distance, speed limit, time of travel (computed while reading in the file), highway name.
+		This tuple acts as the edge weight. 
+
+		The initial state is the node for the start city that is entered and the goal is the end city node.
+		The Cost function varies with different algorithms. It has been taken to be a constant for bfs, dfs and ids wheras it differs for a* depending on the 
+		routing option as will be described below.
+		State Space - Includes all the nodes in the graph.
+		Successor function encodes all possible transitions of the states. All the nodes which are neighbors of a particular node are successor states.
+
+All the algorithms bfs, dfs, ids, astar are iterative in nature - We thought it woud be best to do that instead of recursive in order to avoid the Stack Overflow error.
+
+Problems faced - with inconsistent data. The generation of haversine distances for cities with missing latitude and longitude values was problematic.		
+Simplifications - We have ignored missing speed/ length records and ignored records where the speed/ length values are 0.
+More details in answers below:
+
 Q1. Which search algorithm seems to work best for each routing options?
 Ans. 
 	Routing Option		Routing Algorithm which seems to works best		Comments
@@ -116,19 +134,24 @@ Q4. Which heuristic function did you use, how good is it, and how might you make
 Ans.
 Base Heuristic used - Calculated the distance between two points on the globe using the Haversine Formula. Also for cities and junctions which have missing latitude 
 longitude values: have found out the neighbors of these locations and found used that neighbor's heuristic for this location. Also, note that if a node's all 
-neighbors also do not have latitude longitude values then we look at their neighbors and so on. Also,
+neighbors also do not have latitude longitude values then we look at their neighbors and so on. This heuristic is admissible because it is almost like a stright line
+distance on the globe between two cities. But the actual road connecting the 2 cities would most likely not be a straight line. For:
 
 	For segments: 	Have used the Base Heuristic * Segments per mile as the heuristic cost. This value segments per mile has been calculated by taking the total 
-			length in the graph divided by the total number of segments. 
+			length in the graph divided by the total number of segments.  
 			(Total length and total number of segments is calculated while reading in the values from the file)
 
-	For distance: 	Have used the base heuristic value.
+	For distance: 	Have used the base heuristic value. Since the Haversine formula would give a "as crow flies" distance, which would be like drawing a straight
+			line on the globe, it would surely not overestimate the actual distance which would not all be straightly connected from start to end cities.
 
-	For time: 	Have used the base heuristic value divided by the maximum allowed speed ie = 65 miles/hr as the heuristic value.
+	For time: 	Have used the base heuristic value divided by the maximum allowed speed ie = 65 miles/hr as the heuristic value. This is always admissible
+			because we are dividing the length by 65 which is the maximum speed allowed. So even if the actual speed of a road is less than 65 we would 
+			be taking up a time value which is much less than the actual time that would be required to cover that road.
 
 	For scenic: 	Here we try to allocate penalties for highways. We multiply the base heuristic value by 2(max speed on that road - 54) if the road segment
-			has a speed limit >= 55. Else if the max. speed is < 55 we just take the base heuristic value as the heuristic.
-These heuristics give good results.
+			has a speed limit >= 55. Else if the max. speed is < 55 we just take the base heuristic value as the heuristic. This would always be admissible
+			because if the roads are highways they would be allocated higher heuristic values hence not be picked up from the priority queue.
+	These heuristics give good results.
 
 To further improve the heuristics we can instead of taking the maximum speed/average segments per mile, can look into taking those values of the route dynamically.
 This is keeping in mind that there migh be incorrect data/ anomalies which would severely affect the average.
