@@ -4,6 +4,34 @@ import heapq
 from heapq import *
 import sys
 
+'''
+(1) a description of how you formulated the search problem, including precisely defining the state space, 
+the successor function, the edge weights, and (if applicable) the heuristic function(s) you designed, 
+including an argument for why they are admissible; 
+(2) a brief description of how your search algorithm works; (3) and discussion of any problems you faced, 
+any assumptions, simplifications, and/or design decisions you made.
+
+1) 
+State space: all possible board configurations
+Successor: all configurations reachable with a single move
+Edge weights: uniform
+Heuristic: manhattan distance including the possibility of moving through corners. The algorithm chooses the minimum
+distance option. Each tile needs to move at least this much to reach its home position, so this is an admissible heuristic.
+
+2) the algorithm uses A*. The heuristic uses best first search to find the shortest path for each tile to its home when 
+there are no obstacles.
+
+3) given that the board size is fixed, it was easy to thing through all the cases. it would be interesting to make this 
+algorithm flexible in terms of board size.
+the corner skips do not make possible a change in parity (this can be proven), so we check that the parity is even before 
+trying to solve the problem. 
+
+Designing the best-first search, we realize we are not aware of a way to do what the pseudocode does: replace the eval. function
+value of a given node if a smaller past coth is found for it. heapq* uses tuples, which cannot be changed, and only the
+smallest values can be popped. Still, we did not need to worry about this for the given task.
+
+'''
+
 N = 16
 solution = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0]
 
